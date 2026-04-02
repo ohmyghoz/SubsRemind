@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  password      String
+  name          String?
+  telegramChatId String?       @map("telegram_chat_id")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  
+  subscriptions Subscription[]
+  notificationLogs NotificationLog[]
+
+  @@map("users")
+}
+
+model Subscription {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  name         String
+  price        Decimal  @db.Decimal(10, 2)
+  cardName     String   @map("card_name")
+  renewalDate  DateTime @map("renewal_date")
+  billingCycle String   @map("billing_cycle") // "monthly" | "yearly"
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notificationLogs NotificationLog[]
+
+  @@map("subscriptions")
+}
+
+model NotificationLog {
+  id             String       @id @default(cuid())
+  userId         String       @map("user_id")
+  subscriptionId String       @map("subscription_id")
+  reminderDays   Int          @map("reminder_days") // 2 or 1
+  sentAt         DateTime     @default(now()) @map("sent_at")
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, reminderDays]) // Prevent duplicate reminders
+  @@map("notification_logs")
+}
