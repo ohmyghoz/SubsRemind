@@ -11,9 +11,33 @@ interface Subscription {
   id: string
   name: string
   price: number
+  currency: string
   cardName: string
   renewalDate: string
   billingCycle: string
+}
+
+// Format currency display
+function formatCurrency(amount: number, currency: string): string {
+  if (currency === 'USD') {
+    return `$${amount.toFixed(2)}`
+  }
+  // IDR - Indonesian Rupiah
+  return `Rp${amount.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+}
+
+// Convert any billing cycle to monthly equivalent
+function getMonthlyEquivalent(price: number, billingCycle: string): number {
+  switch (billingCycle) {
+    case 'weekly':
+      return price * 4.33 // Average weeks per month
+    case 'monthly':
+      return price
+    case 'yearly':
+      return price / 12
+    default:
+      return price
+  }
 }
 
 export default function DashboardPage() {
@@ -63,16 +87,39 @@ export default function DashboardPage() {
     }
   }
 
-  // Calculate totals
-  const monthlyTotal = subscriptions
+  // Group subscriptions by currency
+  const idrSubs = subscriptions.filter((s) => s.currency === 'IDR' || !s.currency)
+  const usdSubs = subscriptions.filter((s) => s.currency === 'USD')
+
+  // Calculate IDR totals
+  const idrWeeklyTotal = idrSubs
+    .filter((s) => s.billingCycle === 'weekly')
+    .reduce((sum, s) => sum + Number(s.price), 0)
+  const idrMonthlyTotal = idrSubs
     .filter((s) => s.billingCycle === 'monthly')
     .reduce((sum, s) => sum + Number(s.price), 0)
-
-  const yearlyTotal = subscriptions
+  const idrYearlyTotal = idrSubs
     .filter((s) => s.billingCycle === 'yearly')
     .reduce((sum, s) => sum + Number(s.price), 0)
+  const idrMonthlyEquivalent = 
+    getMonthlyEquivalent(idrWeeklyTotal, 'weekly') + 
+    idrMonthlyTotal + 
+    getMonthlyEquivalent(idrYearlyTotal, 'yearly')
 
-  const monthlyEquivalent = monthlyTotal + yearlyTotal / 12
+  // Calculate USD totals
+  const usdWeeklyTotal = usdSubs
+    .filter((s) => s.billingCycle === 'weekly')
+    .reduce((sum, s) => sum + Number(s.price), 0)
+  const usdMonthlyTotal = usdSubs
+    .filter((s) => s.billingCycle === 'monthly')
+    .reduce((sum, s) => sum + Number(s.price), 0)
+  const usdYearlyTotal = usdSubs
+    .filter((s) => s.billingCycle === 'yearly')
+    .reduce((sum, s) => sum + Number(s.price), 0)
+  const usdMonthlyEquivalent = 
+    getMonthlyEquivalent(usdWeeklyTotal, 'weekly') + 
+    usdMonthlyTotal + 
+    getMonthlyEquivalent(usdYearlyTotal, 'yearly')
 
   if (status === 'loading' || loading) {
     return (
@@ -107,25 +154,73 @@ export default function DashboardPage() {
           {/* Telegram Setup */}
           <TelegramSetup />
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <StatCard
-              title="Monthly Subscriptions"
-              amount={monthlyTotal}
-              subtitle="Billed monthly"
-            />
-            <StatCard
-              title="Yearly Subscriptions"
-              amount={yearlyTotal}
-              subtitle="Billed yearly"
-            />
-            <StatCard
-              title="Monthly Equivalent"
-              amount={monthlyEquivalent}
-              subtitle="Total monthly spending"
-              highlight
-            />
-          </div>
+          {/* IDR Stats */}
+          {(idrSubs.length > 0 || subscriptions.length === 0) && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">🇮🇩 IDR (Rupiah)</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <StatCard
+                  title="Weekly"
+                  amount={idrWeeklyTotal}
+                  currency="IDR"
+                  subtitle="Billed weekly"
+                />
+                <StatCard
+                  title="Monthly"
+                  amount={idrMonthlyTotal}
+                  currency="IDR"
+                  subtitle="Billed monthly"
+                />
+                <StatCard
+                  title="Yearly"
+                  amount={idrYearlyTotal}
+                  currency="IDR"
+                  subtitle="Billed yearly"
+                />
+                <StatCard
+                  title="Monthly Equivalent"
+                  amount={idrMonthlyEquivalent}
+                  currency="IDR"
+                  subtitle="Total monthly spending"
+                  highlight
+                />
+              </div>
+            </div>
+          )}
+
+          {/* USD Stats */}
+          {usdSubs.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">🇺🇸 USD (Dollar)</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <StatCard
+                  title="Weekly"
+                  amount={usdWeeklyTotal}
+                  currency="USD"
+                  subtitle="Billed weekly"
+                />
+                <StatCard
+                  title="Monthly"
+                  amount={usdMonthlyTotal}
+                  currency="USD"
+                  subtitle="Billed monthly"
+                />
+                <StatCard
+                  title="Yearly"
+                  amount={usdYearlyTotal}
+                  currency="USD"
+                  subtitle="Billed yearly"
+                />
+                <StatCard
+                  title="Monthly Equivalent"
+                  amount={usdMonthlyEquivalent}
+                  currency="USD"
+                  subtitle="Total monthly spending"
+                  highlight
+                />
+              </div>
+            </div>
+          )}
 
           {/* Subscriptions List */}
           <div className="bg-white rounded-xl shadow-sm border">
@@ -172,19 +267,21 @@ export default function DashboardPage() {
 function StatCard({
   title,
   amount,
+  currency,
   subtitle,
   highlight = false,
 }: {
   title: string
   amount: number
+  currency: string
   subtitle: string
   highlight?: boolean
 }) {
   return (
     <div className={`p-6 rounded-xl border ${highlight ? 'bg-primary-50 border-primary-200' : 'bg-white border-gray-200'}`}>
       <p className="text-sm font-medium text-gray-600">{title}</p>
-      <p className={`text-3xl font-bold mt-2 ${highlight ? 'text-primary-700' : 'text-gray-900'}`}>
-        ${amount.toFixed(2)}
+      <p className={`text-2xl font-bold mt-2 ${highlight ? 'text-primary-700' : 'text-gray-900'}`}>
+        {formatCurrency(amount, currency)}
       </p>
       <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
     </div>
@@ -221,7 +318,7 @@ function SubscriptionItem({
           </div>
           <div className="mt-1 flex items-center gap-4 text-sm text-gray-600">
             <span className="font-semibold text-gray-900">
-              ${Number(subscription.price).toFixed(2)}
+              {formatCurrency(Number(subscription.price), subscription.currency || 'IDR')}
             </span>
             <span>/ {subscription.billingCycle}</span>
             <span>•</span>

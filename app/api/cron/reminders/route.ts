@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
       const message = formatReminderMessage(
         sub.name,
         Number(sub.price),
+        sub.currency || 'IDR',
         sub.renewalDate,
         2,
         sub.cardName
@@ -99,6 +100,7 @@ export async function GET(request: NextRequest) {
       const message = formatReminderMessage(
         sub.name,
         Number(sub.price),
+        sub.currency || 'IDR',
         sub.renewalDate,
         1,
         sub.cardName

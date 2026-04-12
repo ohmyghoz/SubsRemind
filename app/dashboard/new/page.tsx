@@ -27,6 +27,7 @@ export default function NewSubscriptionPage() {
     const data = {
       name: formData.get('name') as string,
       price: formData.get('price') as string,
+      currency: formData.get('currency') as string,
       cardName: formData.get('cardName') as string,
       renewalDate: formData.get('renewalDate') as string,
       billingCycle: formData.get('billingCycle') as string,
@@ -116,10 +117,16 @@ export default function NewSubscriptionPage() {
                     htmlFor="price"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Price (USD) *
+                    Price *
                   </label>
                   <div className="relative mt-1">
-                    <span className="absolute left-3 top-2 text-gray-500">$</span>
+                    <select
+                      name="currency"
+                      className="absolute left-1 top-1 bottom-1 border-r border-gray-300 bg-gray-50 text-gray-700 text-sm rounded-l px-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="IDR">Rp</option>
+                      <option value="USD">$</option>
+                    </select>
                     <input
                       type="number"
                       id="price"
@@ -127,8 +134,8 @@ export default function NewSubscriptionPage() {
                       step="0.01"
                       min="0"
                       required
-                      placeholder="15.99"
-                      className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="150000"
+                      className="block w-full pl-20 pr-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                 </div>
@@ -146,6 +153,7 @@ export default function NewSubscriptionPage() {
                     required
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
                   >
+                    <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
                     <option value="yearly">Yearly</option>
                   </select>

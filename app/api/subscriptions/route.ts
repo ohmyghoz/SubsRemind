@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { prisma } from '@/lib/prisma'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 // GET /api/subscriptions - List all subscriptions for logged in user
 export async function GET() {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -28,7 +29,7 @@ export async function GET() {
 
 // POST /api/subscriptions - Create new subscription
 export async function POST(request: NextRequest) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { name, price, cardName, renewalDate, billingCycle } = body
+    const { name, price, currency, cardName, renewalDate, billingCycle } = body
 
     // Validate required fields
     if (!name || !price || !cardName || !renewalDate || !billingCycle) {
@@ -47,18 +48,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate billing cycle
-    if (!['monthly', 'yearly'].includes(billingCycle)) {
+    if (!['weekly', 'monthly', 'yearly'].includes(billingCycle)) {
       return NextResponse.json(
         { error: 'Invalid billing cycle' },
         { status: 400 }
       )
     }
 
+    // Validate currency
+    const subCurrency = currency === 'USD' ? 'USD' : 'IDR'
+
     const subscription = await prisma.subscription.create({
       data: {
         userId: session.user.id,
         name,
         price: parseFloat(price),
+        currency: subCurrency,
         cardName,
         renewalDate: new Date(renewalDate),
         billingCycle,

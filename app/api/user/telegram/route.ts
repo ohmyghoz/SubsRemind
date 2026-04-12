@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { prisma } from '@/lib/prisma'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 // PATCH /api/user/telegram - Update user's Telegram chat ID
 export async function PATCH(request: NextRequest) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

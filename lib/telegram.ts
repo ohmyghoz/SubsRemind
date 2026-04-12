@@ -33,14 +33,24 @@ export async function sendTelegramMessage(chatId: string, message: string): Prom
   }
 }
 
+// Format currency for Telegram messages
+function formatTelegramCurrency(price: number, currency: string): string {
+  if (currency === 'USD') {
+    return `$${price.toFixed(2)}`
+  }
+  // IDR - Indonesian Rupiah
+  return `Rp${price.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+}
+
 export function formatReminderMessage(
   subscriptionName: string,
   price: number,
+  currency: string,
   renewalDate: Date,
   daysLeft: number,
   cardName: string
 ): string {
-  const dateStr = renewalDate.toLocaleDateString('en-US', {
+  const dateStr = renewalDate.toLocaleDateString('id-ID', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -48,18 +58,18 @@ export function formatReminderMessage(
   })
 
   const emoji = daysLeft === 1 ? '🔴' : '🟡'
-  const dayText = daysLeft === 1 ? 'tomorrow' : `in ${daysLeft} days`
+  const dayText = daysLeft === 1 ? 'besok' : `${daysLeft} hari lagi`
 
   return `
-${emoji} <b>Subscription Renewal Reminder</b>
+${emoji} <b>Pengingat Pembayaran Langganan</b>
 
 📌 <b>${subscriptionName}</b>
-💰 $${price.toFixed(2)}
-📅 Renews ${dayText} (${dateStr})
-💳 Card: ${cardName}
+💰 ${formatTelegramCurrency(price, currency || 'IDR')}
+📅 Berlangganan ${dayText} (${dateStr})
+💳 Kartu: ${cardName}
 
-Reply with:
-/continue_${subscriptionName.toLowerCase().replace(/\s+/g, '_')} - I'll continue
-/cancel_${subscriptionName.toLowerCase().replace(/\s+/g, '_')} - I'll cancel
+Balas dengan:
+/lanjut_${subscriptionName.toLowerCase().replace(/\s+/g, '_')} - Lanjutkan
+/batal_${subscriptionName.toLowerCase().replace(/\s+/g, '_')} - Batalkan
   `.trim()
 }

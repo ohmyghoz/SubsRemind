@@ -3,7 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import { verifyPassword } from '@/lib/auth'
 
-const handler = NextAuth({
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -43,10 +43,20 @@ const handler = NextAuth({
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id
         token.telegramChatId = user.telegramChatId
+      }
+      // Refresh token data from database on session update
+      if (trigger === 'update' && token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { telegramChatId: true },
+        })
+        if (dbUser) {
+          token.telegramChatId = dbUser.telegramChatId
+        }
       }
       return token
     },
@@ -61,6 +71,8 @@ const handler = NextAuth({
   pages: {
     signIn: '/login',
   },
-})
+}
+
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST }

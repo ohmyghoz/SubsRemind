@@ -29,7 +29,8 @@ model Subscription {
   price        Decimal  @db.Decimal(10, 2)
   cardName     String   @map("card_name")
   renewalDate  DateTime @map("renewal_date")
-  billingCycle String   @map("billing_cycle") // "monthly" | "yearly"
+  billingCycle String   @map("billing_cycle") // "weekly" | "monthly" | "yearly"
+  currency     String   @default("IDR") @map("currency") // "IDR" | "USD"
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -37,6 +38,9 @@ model Subscription {
   notificationLogs NotificationLog[]
 
   @@map("subscriptions")
+  
+  // Weekly subscriptions are calculated as price × 4.33 (avg weeks per month)
+  // Monthly equivalent = weekly × 4.33, monthly × 1, yearly ÷ 12
 }
 
 model NotificationLog {
