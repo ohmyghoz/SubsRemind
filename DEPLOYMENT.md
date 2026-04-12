@@ -202,6 +202,7 @@ subsremind/
 │   ├── providers.tsx
 │   └── telegram-setup.tsx
 ├── lib/
+│   ├── auth-options.ts    # NextAuth configuration (shared)
 │   ├── auth.ts
 │   ├── prisma.ts
 │   └── telegram.ts
@@ -218,6 +219,45 @@ subsremind/
 ├── tsconfig.json
 └── vercel.json
 ```
+
+---
+
+## Lessons Learned
+
+### Explicit Type Annotations for Configuration Objects
+
+When using complex configuration objects (like NextAuth, tRPC, etc.), **always add explicit type annotations**. This prevents build failures in CI/CD environments.
+
+**Example Issue:**
+```typescript
+// ❌ Bad - TypeScript infers type loosely
+export const authOptions = {
+  session: { strategy: 'jwt' },
+  // ...
+}
+```
+
+**Solution:**
+```typescript
+// ✅ Good - Explicit type annotation
+import type { NextAuthOptions } from 'next-auth'
+
+export const authOptions: NextAuthOptions = {
+  session: { strategy: 'jwt' },
+  // ...
+}
+```
+
+**Why this matters:**
+- Local builds may be more lenient with type inference
+- Vercel and other CI/CD environments have stricter type checking
+- Explicit types catch errors at definition time, not at usage time
+
+**Applies to:**
+- NextAuth configuration
+- API route handlers
+- Middleware configurations
+- Any complex object passed to third-party libraries
 
 ---
 
