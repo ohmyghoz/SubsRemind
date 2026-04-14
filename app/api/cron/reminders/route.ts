@@ -59,9 +59,9 @@ export async function GET(request: NextRequest) {
         sub.cardName
       )
 
-      const sent = await sendTelegramMessage(sub.user.telegramChatId, message)
+      const result = await sendTelegramMessage(sub.user.telegramChatId, message)
       
-      if (sent) {
+      if (result.success) {
         await prisma.notificationLog.create({
           data: {
             userId: sub.userId,
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         })
         results.d2Reminders++
       } else {
-        results.errors.push(`Failed to send D-2 reminder for ${sub.name} to ${sub.user.email}`)
+        results.errors.push(`D-2 ${sub.name}: ${result.error}`)
       }
     }
 
@@ -109,9 +109,9 @@ export async function GET(request: NextRequest) {
         sub.cardName
       )
 
-      const sent = await sendTelegramMessage(sub.user.telegramChatId, message)
+      const result = await sendTelegramMessage(sub.user.telegramChatId, message)
       
-      if (sent) {
+      if (result.success) {
         await prisma.notificationLog.create({
           data: {
             userId: sub.userId,
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
         })
         results.d1Reminders++
       } else {
-        results.errors.push(`Failed to send D-1 reminder for ${sub.name} to ${sub.user.email}`)
+        results.errors.push(`D-1 ${sub.name}: ${result.error}`)
       }
     }
 

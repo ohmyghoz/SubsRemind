@@ -1,9 +1,10 @@
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 
-export async function sendTelegramMessage(chatId: string, message: string): Promise<boolean> {
+export async function sendTelegramMessage(chatId: string, message: string): Promise<{ success: boolean; error?: string }> {
   if (!BOT_TOKEN) {
-    console.error('TELEGRAM_BOT_TOKEN not set')
-    return false
+    const error = 'TELEGRAM_BOT_TOKEN not set in environment variables'
+    console.error(error)
+    return { success: false, error }
   }
 
   try {
@@ -22,14 +23,16 @@ export async function sendTelegramMessage(chatId: string, message: string): Prom
     const data = await response.json()
     
     if (!data.ok) {
-      console.error('Telegram API error:', data.description)
-      return false
+      const error = `Telegram API error: ${data.description} (chat_id: ${chatId})`
+      console.error(error)
+      return { success: false, error }
     }
 
-    return true
+    return { success: true }
   } catch (error) {
-    console.error('Failed to send Telegram message:', error)
-    return false
+    const errorMsg = `Failed to send Telegram message: ${error instanceof Error ? error.message : String(error)}`
+    console.error(errorMsg)
+    return { success: false, error: errorMsg }
   }
 }
 
